@@ -6,33 +6,65 @@ interface PopulationGraphProps {
     selectedPrefCodes: number[];
 }
 
+// データの型を定義
+interface PopulationData {
+    year: number;
+    value: number;
+}
+
 const PopulationGraph: React.FC<PopulationGraphProps> = ({ selectedPrefCodes }) => {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<PopulationData[]>([]);
     const [populationType, setPopulationType] = useState<'total' | 'young' | 'working' | 'old'>('total');
 
     useEffect(() => {
         const loadPopulationData = async () => {
-            const fetchedData = await Promise.all(
-                selectedPrefCodes.map((code) => fetchPopulationData(code))
-            );
+            try {
+                const fetchedData = await Promise.all(
+                    selectedPrefCodes.map((code) => fetchPopulationData(code))
+                );
 
-            const combinedData = fetchedData.reduce((acc, curr) => {
-                curr.result.data.forEach((item: any) => {
-                    const yearData = item.data.map((d: any) => ({
-                        year: d.year,
-                        value: populationType === 'total' ? d.value : populationType === 'young' ? d.youth : populationType === 'working' ? d.working : d.old,
-                    }));
-                    acc.push(...yearData);
-                });
-                return acc;
-            }, []);
-            setData(combinedData);
+                const combinedData: PopulationData[] = fetchedData.reduce((acc: PopulationData[], curr: any) => {
+                    if (curr && curr.result && curr.result.data) {
+                        curr.result.data.forEach((item: any) => {
+                            item.data.forEach((d: any) => {
+                                const value = populationType === 'total' ? d.value :
+                                              populationType === 'young' ? d.youth :
+                                              populationType === 'working' ? d.working :
+                                              d.old;
+
+                                acc.push({ year: d.year, value });
+                            });
+                        });
+                    }
+                    return acc;
+                }, []);
+
+                // 年ごとにデータを集約
+                const aggregatedData = aggregatedDataByYear(combinedData);
+                setData(aggregatedData);
+            } catch (error) {
+                console.error('Error loading population data:', error);
+            }
         };
 
         if (selectedPrefCodes.length) {
             loadPopulationData();
         }
     }, [selectedPrefCodes, populationType]);
+
+    // 年ごとにデータを集約する関数
+    const aggregatedDataByYear = (data: PopulationData[]) => {
+        const result: { [key: number]: number } = {};
+        data.forEach(({ year, value }) => {
+            const yearNum = Number(year); // yearをNumber型に変換
+            if (!result[yearNum]) {
+                result[yearNum] = 0;
+            }
+            result[yearNum] += value;
+        });
+        return Object.keys(result).map(year => ({ year: Number(year), value: result[Number(year)] }));
+    };
+    
 
     return (
         <div>
