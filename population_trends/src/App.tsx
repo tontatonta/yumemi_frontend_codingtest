@@ -1,26 +1,17 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import CheckboxList from './companents/CheckboxList';
+import PopulationGraph from './companents/PopulationGraph';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+const App: React.FC = () => {
+    const [selectedPrefCodes, setSelectedPrefCodes] = useState<number[]>([]);
+
+    return (
+        <div>
+            <h1>都道府県別の総人口推移</h1>
+            <CheckboxList onSelect={setSelectedPrefCodes} />
+            {selectedPrefCodes.length > 0 && <PopulationGraph selectedPrefCodes={selectedPrefCodes} />}
+        </div>
+    );
+};
 
 export default App;
